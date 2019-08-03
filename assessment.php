@@ -6,11 +6,18 @@
 * Time taken: 0h 0m
 * Remarks:
 *   - Modules
-*   - Errors Originally 'items' element of $order_items is one-dimensional array rather than multi-dimensional array,
-*     the keys 'id', 'value" and 'name' are duplicate, and so only the last item with the same key is available.
+*   - Errors Originally 'items' element of $order_items is one-dimensional array,
+*     the keys 'id', 'value" and 'name' are duplicate, and so only the last item with the same key is available;
+*     actually it should be two-dimensional array
 */
 
 class StoreData {
+    private $customers;
+
+    private $orders;
+
+    private $order_items;
+
     function __construct() {
     }
 
@@ -62,19 +69,112 @@ class StoreData {
                 ]
             ]
         ];
+
+        $this->customers = $customers;
+        $this->orders = $orders;
+        $this->order_items = $order_items;
     }
 
     public function formatData ($option) {
         // All data should be returned as formatted JSON.
-        if ($option = 1) {
+
+        $orders = $this->formatOrders();
+        if ($option == 1) {
             // return orders sorted by highest value. Be sure to include the order total in the response
-        } elseif ($option = 2) {
+        } elseif ($option == 2) {
             // return orders sorted by date
-        } elseif ($option = 3) {
+            $this->sortOrdersByDate($orders);
+        } elseif ($option == 3) {
             // return orders without items
         }
     }
-}
+
+    /**
+     * @param $orders
+     * @return array
+     */
+    private function sortOrdersByDate($orders) {
+        foreach($orders as $val) {
+            $dates[] = $val['dateOrdered'];
+            $ordersArr[] = $val;
+        }
+        array_multisort($dates, $ordersArr);
+        return $ordersArr;
+    }
+
+
+    /**
+     * Get the values of a multi-dimensional array by a sub-key
+     * @param $subkey string The sub-key whose values will be retrieved
+     * @param $attr A multi-dimensional array
+     * @return array Values of the sub-key
+     */
+    private function arrayValuesRecursive($subkey, array $arr){
+        $val = array();
+        array_walk_recursive($arr, function($v, $k) use($subkey, &$val){
+            if ($k == $subkey) {
+                array_push($val, $v);
+            }
+        });
+        return $val;
+    }
+
+    /**
+     * return mixed[]
+     * array structure: ['order1' => 100.00, 'order2' => 200.00]
+     */
+    private function getOrdersTotal() {
+        $ordersTotal = [];
+        foreach ($this->order_items as $order) {
+            $ordersTotal[$order['id']] = $this->getItemsTotal($order['items']);
+        }
+
+        return $ordersTotal;
+    }
+
+    private function getItemsTotal(array $items) {
+        $values = $this->arrayValuesRecursive('value', $items);
+        return array_reduce($values, function ($total, $value) {
+            $total += $value;
+            return $total;
+        });
+    }
+
+    private function formatCustomers() {
+        foreach ($this->customers as $customer) {
+            $arr[$customer['id']] = $customer;
+        }
+
+        return $arr;
+    }
+
+    private function formatOrderItems() {
+        $orderItemsArray = [];
+        foreach ($this->order_items as $order) {
+            $orderItemsArray[$order['id']] = $order['items'];
+        }
+
+        return $orderItemsArray;
+    }
+
+    private function formatOrders() {
+        $ordersTotal = $this->getOrdersTotal();
+        $customersArray = $this->formatCustomers();
+        $orderItemsArray = $this->formatOrderItems();
+
+        $newOrders = [];
+        foreach ($this->orders as $order) {
+            $orderId = $order['id'];
+            $newOrders[$orderId] = [
+                'date' => $order['dateOrdered'],
+                'total' => $ordersTotal[$orderId],
+                'customer' => $customersArray[$order['customerId']],
+                'order_items' => $orderItemsArray[$orderId]
+            ];
+        }
+
+        return $newOrders;
+    }}
 
 /**
  * Is it running in CLI.
@@ -97,9 +197,17 @@ echo "The script is running from $env" . $eol;
 
 if ($running_cli) {
     if ($argc !== 2) {
-        echo 'The CLI script needs one and only one option' . $eol;
+        die('The CLI script needs one and only one option' . $eol);
     }
+    $option = $argv[1];
+} else {
+    $option = (int)$_GET['option'];
+}
+
+if (!in_array($option, [1, 2, 3])) {
+    die('Invalid Parameter.');
 }
 
 $run = new StoreData();
+$run->loadData();
 $run->formatData($option);
