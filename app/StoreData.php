@@ -3,16 +3,25 @@ declare(strict_types=1);
 
 namespace App;
 
-use mysql_xdevapi\Exception;
-
 /**
  * Class StoreData
  *
  * Format data of customers' orders
  */
 class StoreData {
+    /**
+     * @var int Sort by total.
+     */
     public const SORT_TOTAL = 1;
+
+    /**
+     * @var int Sort by order date.
+     */
     public const SORT_DATE = 2;
+
+    /**
+     * @var int Filter orders which don't have order items.
+     */
     public const FILTER_EMPTY_ORDERS = 3;
 
     /**
@@ -59,7 +68,7 @@ class StoreData {
      *
      * @return mixed[]
      *
-     * @throws \Exception
+     * @throws \App\StoreDataException
      */
     public function formatData ($option): array
     {
@@ -74,7 +83,7 @@ class StoreData {
             // return orders without items
             $formated = $this->getEmptyOrders($orders);
         } else {
-            throw new \Exception('Invalid option');
+            throw new StoreDataException('Invalid option.');
         }
 
         return ['orders' => $formated];
@@ -162,9 +171,11 @@ class StoreData {
     private function getOrdersTotal(): array
     {
         $ordersTotal = [];
-        foreach ($this->orderItems as $order) {
+
+        $details = array_values((array)$this->orderItems);
+        array_walk($details, function($order) use (&$ordersTotal) {
             $ordersTotal[$order['id']] = $this->getItemsTotal($order['items']);
-        }
+        });
 
         return $ordersTotal;
     }

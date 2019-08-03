@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Tests;
 
 use App\StoreData;
+use App\StoreDataException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -19,6 +20,8 @@ class AssessmentTest extends TestCase
      * Test sorting by total values.
      *
      * @return void
+     *
+     * @throws \App\StoreDataException
      */
     public function testSortByTotal(): void
     {
@@ -40,6 +43,8 @@ class AssessmentTest extends TestCase
      * Test sorting by ordered date.
      *
      * @return void
+     *
+     * @throws \App\StoreDataException
      */
     public function testSortByDate(): void
     {
@@ -55,15 +60,36 @@ class AssessmentTest extends TestCase
 
     /**
      * Testing filtering out orders without order items.
+     *
+     * @return void
+     *
+     * @throws \App\StoreDataException
      */
     public function testFilterEmptyOrder(): void
     {
         $store = new StoreData();
         $formatedOrders = $store->formatData(StoreData::FILTER_EMPTY_ORDERS);
         $this->assertArrayHasKey('orders', $formatedOrders);
-        $order = current(reset($formatedOrders['orders']));
+        $order = reset($formatedOrders['orders']);
         $this->assertArrayHasKey('order_items', $order);
         $this->assertSame([], $order['order_items']);
         $this->assertSame(0, $order['total']);
+    }
+
+    /**
+     * Test exception is thrown when option is not valid.
+     *
+     * @return void
+     *
+     * @throws StoreDataException
+     */
+    public function testExceptionWhenInvalidOption(): void
+    {
+        $this->expectException(StoreDataException::class);
+        $this->expectExceptionMessage('Invalid option.');
+        $this->expectExceptionCode(401);
+        $store = new StoreData();
+        $store->formatData(4);
+
     }
 }

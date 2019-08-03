@@ -3,7 +3,7 @@
 * DotDev - PHP Developer Test
 * Author: William
 * Date Completed:
-* Time taken: 0h 0m
+* Time taken: 3h 30m
 * Remarks:
 *   - Modules
  *    Installed PHPUnit using composer in order to make unit test.
@@ -20,6 +20,8 @@ require_once("./vendor/autoload.php");
 
 /**
  * Is it running in CLI.
+ * (this function  and its calling are put outside StoreData class
+ * because it doesn't fit the class's responsibility)
  *
  * @return boolean
  */
@@ -44,7 +46,7 @@ if ($running_cli) {
     }
     $option = (int)$argv[1];
 } else {
-    $option = (int)$_GET['option'];
+    $option = (int)($_GET['option'] ?? null);
 }
 
 if (!in_array(
