@@ -1,0 +1,13 @@
+{
+  "orders": {
+    "CQALBwoDAw0AAQgHBAEJBQ": {
+      "date": 61538012504,
+      "total": 0,
+      "customer": {
+        "id": "DAEFDQwPDwMCCwULBAAMDg",
+        "name": "Fred"
+      },
+      "order_items": []
+    }
+  }
+}
