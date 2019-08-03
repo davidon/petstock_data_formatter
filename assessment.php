@@ -30,6 +30,7 @@ class StoreData {
             ['id' => 'DQkCAAYHAAMJBA4LBAUOCg', 'name' => 'Robot']
         ];
         $orders = (object) [
+            // in order to see the ordered result by date, prefixed a digit to the original dateOrdered values
             ['id' => 'DwsNDQ4JDQEEBQIJBAwNBA', 'customerId' => 'BQYLCQ0CCwIOBgYNBAcACw', 'dateOrdered' => 91506476504],
             ['id' => 'DwsPBQ0BAA0BBwwMBAoECA', 'customerId' => 'BQYLCQ0CCwIOBgYNBAcACw', 'dateOrdered' => 71506480104],
             ['id' => 'DAEFCwUAAgQPAQIIBA4IBA', 'customerId' => 'CQwPDAkDDAQLBQsOBAcMBw', 'dateOrdered' => 51506562904],
@@ -87,6 +88,9 @@ class StoreData {
             $formated = $this->sortOrdersByDate($orders);
         } elseif ($option == 3) {
             // return orders without items
+            $formated = array_filter($orders, function ($order) {
+                return empty($order['order_items']);
+            });
         }
 
         return json_encode($formated);
@@ -176,15 +180,14 @@ class StoreData {
 
         $newOrders = [];
         foreach ($this->orders as $order) {
-            $customerInfo = isset($customersArray[$order['customerId']]) ? $customersArray[$order['customerId']] : ['id' => $order['customerId']];
-
             $orderId = $order['id'];
             $newOrders[$orderId] = [
                 'date' => $order['dateOrdered'],
                 //if an order has no order items, then total is 0
-                'total' => isset($ordersTotal[$orderId]) ? $ordersTotal[$orderId] : 0,
-                'customer' => $customerInfo,
-                'order_items' => $orderItemsArray[$orderId]
+                'total' => $ordersTotal[$orderId] ?? 0,
+                'customer' =>  $customersArray[$order['customerId']] ?? ['id' => $order['customerId']],
+                //if an order has no order items, then set items as empty array
+                'order_items' => $orderItemsArray[$orderId] ?? []
             ];
         }
 
