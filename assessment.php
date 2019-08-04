@@ -1,17 +1,23 @@
 <?php
 /*
-* DotDev - PHP Developer Test
-* Author: William
-* Date Completed:
-* Time taken: 3h 30m
-* Remarks:
-*   - Modules
+ * DotDev - PHP Developer Test
+ * Author: William
+ * Date Completed:
+ * Time taken: 3h 30m
+ * Remarks:
+ *   - Modules
+ *    assessment.php under root folder is the main program to run from CLI or browser;
+ *    artifacts.php holds the data objects, which is moved from assessment.php for better separation of concerns;
+ *    app/ folder holds class files for data formatting and exception;
+ *    tests/ folder holds unit test files;
+ *    Docs/ folder holds running output result.
+ *
  *    Installed PHPUnit using composer in order to make unit test.
  *
-*   - Errors Originally 'items' element of $order_items is one-dimensional array,
-*     the keys 'id', 'value" and 'name' are duplicate, and so only the last item with the same key is available;
-*     actually it should be two-dimensional array
-*/
+ *   - Errors Originally 'items' element of $order_items is one-dimensional array,
+ *     the keys 'id', 'value" and 'name' are duplicate, and so only the last item with the same key is available;
+ *     actually it should be two-dimensional array
+ */
 declare(strict_types=1);
 
 use App\StoreData;
