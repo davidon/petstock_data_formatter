@@ -31,15 +31,16 @@ require_once("./vendor/autoload.php");
  *
  * @return boolean
  */
-function is_cli() {
-    return $is_cli = in_array(PHP_SAPI, array('cli', 'cgi', 'cgi-fcgi'));
+function is_cli()
+{
+    return in_array(PHP_SAPI, array('cli', 'cgi', 'cgi-fcgi'));
 }
 
 $running_cli = is_cli();
 $eol = $running_cli ? PHP_EOL : '<br/>';
 
-if (version_compare(phpversion(), '7.0.00', '<')) {
-    echo 'The application needs to run on PHP 7 or higher.' . $eol;
+if (PHP_VERSION_ID < 70400) {
+    echo 'The application needs to run on PHP 7.4 or higher.' . $eol;
 }
 
 $env = $running_cli ? 'CLI' : 'Browser';

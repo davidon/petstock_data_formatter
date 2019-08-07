@@ -8,7 +8,8 @@ namespace App;
  *
  * Format data of customers' orders
  */
-class StoreData {
+class StoreData
+{
     /**
      * @var int Sort by total.
      */
@@ -56,7 +57,7 @@ class StoreData {
     /**
      * Load data.
      */
-    private function loadData (): void
+    private function loadData(): void
     {
         list($this->customers, $this->orders, $this->orderItems) = require(dirname(__DIR__) . '/artifacts.php');
     }
@@ -70,7 +71,7 @@ class StoreData {
      *
      * @throws \App\StoreDataException
      */
-    public function formatData ($option): array
+    public function formatData($option): array
     {
         $orders = $this->formatOrdersDetails();
         if ($option === self::SORT_TOTAL) {
@@ -90,76 +91,31 @@ class StoreData {
     }
 
     /**
-     * Get orders without order items.
+     * Format orders with detailed information.
      *
-     * @param mixed[] $orders
-     *
-     * @return array
+     * @return mixed[]
      */
-    private function getEmptyOrders(array $orders): array
+    private function formatOrdersDetails(): array
     {
-        return array_filter($orders, function ($order) {
-            return empty($order['order_items']);
-        });
-    }
+        $ordersTotal = $this->getOrdersTotal();
+        $customersArray = $this->formatCustomers();
+        $orderItemsArray = $this->formatOrderItems();
 
-    /**
-     * Sort orders by the key.
-     *
-     * @param $orders
-     * @param $key
-     *
-     * @return array
-     */
-    private function sortOrdersBy(array $orders, string $key): array
-    {
-        uasort($orders, static function ($a, $b) use ($key) {
-            return $a[$key] <=> $b[$key];
-        });
-        return $orders;
-    }
+        $newOrders = [];
+        foreach ($this->orders as $order) {
+            $orderId = $order['id'];
+            $newOrders[$orderId] = [
+                'date' => $order['dateOrdered'],
+                //If an order has no order items, then total is 0.
+                'total' => $ordersTotal[$orderId] ?? 0,
+                //If there's no customer's detail (not existing in customers object), then only customer's id included.
+                'customer' => $customersArray[$order['customerId']] ?? ['id' => $order['customerId']],
+                //If an order has no order items, then set items as empty array.
+                'order_items' => $orderItemsArray[$orderId] ?? []
+            ];
+        }
 
-    /**
-     * Sort orders by date
-     *
-     * @param mixed[] $orders
-     *
-     * @return array
-     */
-    private function sortOrdersByDate(array $orders): array
-    {
-        return $this->sortOrdersBy($orders,'date');
-    }
-
-    /**
-     * Sort orders by total value
-     *
-     * @param mixed[] $orders
-     *
-     * @return array
-     */
-    private function sortOrdersByTotal(array $orders): array
-    {
-        return $this->sortOrdersBy($orders,'total');
-    }
-
-    /**
-     * Get the values of a multi-dimensional array by a sub-key.
-     *
-     * @param $subkey string The sub-key whose values will be retrieved
-     * @param $attr A multi-dimensional array
-     *
-     * @return array Values of the sub-key
-     */
-    private function array_values_recursive(string $subkey, array $arr): array
-    {
-        $val = array();
-        array_walk_recursive($arr, function($v, $k) use($subkey, &$val){
-            if ($k == $subkey) {
-                $val[] = $v;
-            }
-        });
-        return $val;
+        return $newOrders;
     }
 
     /**
@@ -173,9 +129,16 @@ class StoreData {
         $ordersTotal = [];
 
         $details = array_values((array)$this->orderItems);
-        array_walk($details, function($order) use (&$ordersTotal) {
+        array_walk($details, function ($order) use (&$ordersTotal) {
             $ordersTotal[$order['id']] = $this->getItemsTotal($order['items']);
         });
+
+        /* another way to get the same total array, keep!
+        $ordersTotal2 = array_reduce($details, function ($total, $order) {
+            $total[$order['id']] = $this->getItemsTotal($order['items']);
+            return $total;
+        });
+        */
 
         return $ordersTotal;
     }
@@ -199,20 +162,6 @@ class StoreData {
     }
 
     /**
-     * Format order items.
-     *
-     * @return mixed
-     */
-    private function formatOrderItems(): array
-    {
-        $ordersItems = (array)$this->orderItems;
-        return array_combine(
-            array_column($ordersItems, 'id'),
-            array_column($ordersItems, 'items')
-        );
-    }
-
-    /**
      * Format customers.
      *
      * @return mixed[]
@@ -228,30 +177,74 @@ class StoreData {
     }
 
     /**
-     * Format orders with detailed information.
+     * Format order items.
      *
-     * @return mixed[]
+     * @return mixed
      */
-    private function formatOrdersDetails(): array
+    private function formatOrderItems(): array
     {
-        $ordersTotal = $this->getOrdersTotal();
-        $customersArray = $this->formatCustomers();
-        $orderItemsArray = $this->formatOrderItems();
+        $ordersItems = (array)$this->orderItems;
+        return array_combine(
+            array_column($ordersItems, 'id'),
+            array_column($ordersItems, 'items')
+        );
+    }
 
-        $newOrders = [];
-        foreach ($this->orders as $order) {
-            $orderId = $order['id'];
-            $newOrders[$orderId] = [
-                'date' => $order['dateOrdered'],
-                //If an order has no order items, then total is 0.
-                'total' => $ordersTotal[$orderId] ?? 0,
-                //If there's no customer's detail (not existing in customers object), then only customer's id included.
-                'customer' =>  $customersArray[$order['customerId']] ?? ['id' => $order['customerId']],
-                //If an order has no order items, then set items as empty array.
-                'order_items' => $orderItemsArray[$orderId] ?? []
-            ];
-        }
+    /**
+     * Sort orders by total value
+     *
+     * @param mixed[] $orders
+     *
+     * @return array
+     */
+    private function sortOrdersByTotal(array $orders): array
+    {
+        return $this->sortOrdersBy($orders, 'total');
+    }
 
-        return $newOrders;
+    /**
+     * Sort orders by the key.
+     *
+     * @param $orders
+     * @param $key
+     *
+     * @return array
+     */
+    private function sortOrdersBy(array $orders, string $key): array
+    {
+        /* Solutoin 1, KEEP:
+        uasort($orders, static function ($a, $b) use ($key) {
+            return $a[$key] <=> $b[$key];
+        });*/
+
+        // Solution 2:
+        array_multisort($orders, SORT_NUMERIC, array_column($orders, $key));
+        return $orders;
+    }
+
+    /**
+     * Sort orders by date
+     *
+     * @param mixed[] $orders
+     *
+     * @return array
+     */
+    private function sortOrdersByDate(array $orders): array
+    {
+        return $this->sortOrdersBy($orders, 'date');
+    }
+
+    /**
+     * Get orders without order items.
+     *
+     * @param mixed[] $orders
+     *
+     * @return array
+     */
+    private function getEmptyOrders(array $orders): array
+    {
+        return array_filter($orders, function ($order) {
+            return empty($order['order_items']);
+        });
     }
 }

@@ -37,6 +37,11 @@ class AssessmentTest extends TestCase
 
         $orderLast = end($formatedOrders['orders']);
         $this->assertSame(191.55, $orderLast['total']);
+
+        $this->assertSame(
+            [0, 18.55, 111.55, 111.55, 133.55, 191.55],
+            array_column($formatedOrders['orders'], 'total')
+        );
     }
 
     /**
